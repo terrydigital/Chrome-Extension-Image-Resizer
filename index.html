@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome Extension Image Resizer Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --secondary: #F7931E;
+            --dark: #2E294E;
+            --darker: #1B1725;
+            --light: #4ECDC4;
+            --lighter: #F7FFF7;
+            --success: #06D6A0;
+            --danger: #EF476F;
+            --border: #4ECDC4;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--lighter);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            position: relative;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--light));
+            border-radius: 2px;
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .subtitle {
+            color: var(--light);
+            font-size: 1.1rem;
+            animation: fadeIn 1s ease 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 2rem;
+            border: 3px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(46, 41, 78, 0.5);
+            animation: slideUp 0.8s ease 0.4s both;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1.2rem 2rem;
+            background: transparent;
+            border: none;
+            color: var(--light);
+            cursor: pointer;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 25%;
+            height: 50%;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .tab:hover {
+            background: rgba(251, 133, 0, 0.1);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--darker);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeInContent 0.5s ease;
+        }
+
+        @keyframes fadeInContent {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .sidebar {
+            background: rgba(46, 41, 78, 0.4);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            height: fit-content;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-section h3 {
+            color: var(--secondary);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .bg-type-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .bg-type-btn {
+            flex: 1;
+            padding: 0.7rem;
+            background: rgba(46, 41, 78, 0.6);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .bg-type-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .bg-type-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--darker);
+            border-color: var(--secondary);
+        }
+
+        .gradient-presets {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .gradient-preset {
+            height: 60px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .gradient-preset:hover {
+            border-color: var(--light);
+            transform: scale(1.05);
+        }
+
+        .gradient-preset.active {
+            border-color: var(--secondary);
+            box-shadow: 0 0 20px rgba(251, 133, 0, 0.4);
+        }
+
+        .gradient-preset.dark-saas {
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+        }
+
+        .gradient-preset.neon {
+            background: linear-gradient(135deg, #ff006e, #8338ec, #3a86ff);
+        }
+
+        .gradient-preset.pastel {
+            background: linear-gradient(135deg, #ffd6ff, #e7c6ff, #c8b6ff);
+        }
+
+        .gradient-preset.ocean {
+            background: linear-gradient(135deg, #00b4d8, #0077b6, #03045e);
+        }
+
+        .gradient-preset.sunset {
+            background: linear-gradient(135deg, #ff9e00, #ff6b00, #ff0054);
+        }
+
+        .gradient-preset.forest {
+            background: linear-gradient(135deg, #52b788, #2d6a4f, #1b4332);
+        }
+
+        .color-picker-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .color-input-wrapper {
+            flex: 1;
+        }
+
+        .color-input-wrapper label {
+            display: block;
+            color: var(--light);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone {
+            border: 3px dashed var(--border);
+            border-radius: 16px;
+            padding: 4rem 2rem;
+            text-align: center;
+            background: rgba(46, 41, 78, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(251, 133, 0, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .upload-zone:hover::before {
+            opacity: 1;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(251, 133, 0, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--secondary);
+            background: rgba(255, 183, 3, 0.2);
+            transform: scale(1.05);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .upload-subtext {
+            color: var(--light);
+            font-size: 0.9rem;
+        }
+
+        .canvas-container {
+            background: rgba(46, 41, 78, 0.4);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px;
+            position: relative;
+        }
+
+        #mainCanvas {
+            max-width: 100%;
+            max-height: 700px;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .export-section {
+            margin-top: 2rem;
+        }
+
+        .export-presets {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .export-preset {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(46, 41, 78, 0.6);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .export-preset:hover {
+            border-color: var(--primary);
+            background: rgba(251, 133, 0, 0.1);
+        }
+
+        .export-preset input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .export-preset-info {
+            flex: 1;
+        }
+
+        .export-preset-name {
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .export-preset-size {
+            color: var(--light);
+            font-size: 0.85rem;
+        }
+
+        .export-btn, .export-all-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--success), var(--light));
+            color: var(--darker);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .export-btn:hover, .export-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(6, 214, 160, 0.4);
+        }
+
+        .export-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .preview-card {
+            background: rgba(46, 41, 78, 0.6);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            animation: scaleIn 0.4s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .preview-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(251, 133, 0, 0.3);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .preview-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--secondary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .preview-size {
+            font-size: 0.85rem;
+            color: var(--light);
+            background: rgba(142, 202, 230, 0.1);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        .preview-image-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-image-container::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            position: relative;
+            z-index: 1;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--darker);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(251, 133, 0, 0.4);
+        }
+
+        .download-btn:active {
+            transform: scale(0.98);
+        }
+
+        .download-all {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .download-all-btn {
+            padding: 1.2rem 3rem;
+            background: linear-gradient(135deg, var(--success), var(--light));
+            color: var(--darker);
+            border: none;
+            border-radius: 12px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(6, 214, 160, 0.3);
+        }
+
+        .download-all-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(6, 214, 160, 0.5);
+        }
+
+        .guide-content {
+            background: rgba(46, 41, 78, 0.4);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+        }
+
+        .guide-section {
+            margin-bottom: 3rem;
+        }
+
+        .guide-section h2 {
+            color: var(--primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .guide-section h3 {
+            color: var(--secondary);
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        .guide-section p, .guide-section li {
+            line-height: 1.8;
+            color: var(--lighter);
+            margin-bottom: 0.5rem;
+        }
+
+        .guide-section ul, .guide-section ol {
+            margin-left: 2rem;
+            margin-top: 1rem;
+        }
+
+        .guide-section a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .guide-section a:hover {
+            color: var(--primary);
+        }
+
+        .checklist {
+            background: rgba(6, 214, 160, 0.1);
+            border-left: 4px solid var(--success);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.8rem 0;
+            color: var(--lighter);
+        }
+
+        .checklist-item::before {
+            content: '☐';
+            font-size: 1.5rem;
+            color: var(--success);
+        }
+
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: rgba(46, 41, 78, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .specs-table th {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--darker);
+            padding: 1rem;
+            text-align: left;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .specs-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--lighter);
+        }
+
+        .specs-table tr:hover {
+            background: rgba(251, 133, 0, 0.1);
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-warning {
+            background: rgba(255, 183, 3, 0.2);
+            border-left: 4px solid var(--secondary);
+            color: var(--secondary);
+        }
+
+        .alert-info {
+            background: rgba(142, 202, 230, 0.2);
+            border-left: 4px solid var(--light);
+            color: var(--light);
+        }
+
+        .options-panel {
+            background: rgba(46, 41, 78, 0.4);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .option-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .option-label {
+            display: block;
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        select, input[type="number"], input[type="color"], input[type="range"] {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(46, 41, 78, 0.6);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--lighter);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(251, 133, 0, 0.2);
+        }
+
+        input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        input[type="range"] {
+            padding: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            margin-top: 4rem;
+            border-top: 2px solid var(--border);
+            color: var(--light);
+            font-size: 0.9rem;
+        }
+
+        footer a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 1024px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab:not(:last-child)::after {
+                display: none;
+            }
+
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .guide-content {
+                padding: 1.5rem;
+            }
+        }
+
+        .donate-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            padding: 0.9rem 1.4rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ff5f5f, #ffb703);
+            color: #011627;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-decoration: none;
+            box-shadow: 0 10px 30px rgba(255, 183, 3, 0.45);
+            transition: all 0.25s ease;
+        }
+
+        .donate-fab:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 183, 3, 0.7);
+        }
+
+        .donate-fab:active {
+            transform: scale(0.97);
+        }
+
+        .bg-option {
+            display: none;
+        }
+
+        .bg-option.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Chrome Extension Image Resizer Pro</h1>
+            <p class="subtitle">Professional tool to prepare assets for Chrome Web Store</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="icons">🎨 Icons</button>
+            <button class="tab" data-tab="promotional">📸 Promotional</button>
+            <button class="tab" data-tab="screenshots">🖼️ Screenshots</button>
+            <button class="tab" data-tab="mockup">✨ Mockup Generator</button>
+            <button class="tab" data-tab="guide">📚 Guide</button>
+        </div>
+
+        <!-- Icons Tab -->
+        <div id="icons-tab" class="tab-content active">
+            <div class="alert alert-info">
+                <span>ℹ️</span>
+                <div>Upload original logo (recommended ≥ 512x512px, PNG with transparent background). Tool will automatically generate all required sizes.</div>
+            </div>
+
+            <div class="options-panel">
+                <div class="option-group">
+                    <label class="option-label">Resize Mode</label>
+                    <select id="icon-resize-mode">
+                        <option value="contain">Contain (maintain ratio + padding)</option>
+                        <option value="cover">Cover (crop to fit)</option>
+                        <option value="fill">Fill (stretch)</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label class="option-label">Background Color (for padding)</label>
+                    <input type="color" id="icon-bg-color" value="#ffffff">
+                </div>
+                <div class="option-group">
+                    <label class="option-label">Padding (%)</label>
+                    <input type="number" id="icon-padding" min="0" max="30" value="0">
+                </div>
+            </div>
+
+            <div class="upload-zone" id="icon-upload-zone">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">Click or drag & drop your logo here</div>
+                <div class="upload-subtext">Supported: PNG, JPG, JPEG, WEBP</div>
+                <input type="file" id="icon-input" accept="image/*" class="hidden">
+            </div>
+
+            <div id="icon-preview" class="preview-grid" style="display: none;"></div>
+
+            <div id="icon-download-all" class="download-all" style="display: none;">
+                <button class="download-all-btn" onclick="downloadAllIcons()">⬇️ Download All Icons (ZIP)</button>
+            </div>
+        </div>
+
+        <!-- Promotional Tab -->
+        <div id="promotional-tab" class="tab-content">
+            <div class="alert alert-info">
+                <span>ℹ️</span>
+                <div>Upload original promotional image (recommended ratio 16:9 or square). Tool will create Small Tile, Marquee, and Screenshot.</div>
+            </div>
+
+            <div class="options-panel">
+                <div class="option-group">
+                    <label class="option-label">Crop Position</label>
+                    <select id="promo-crop-position">
+                        <option value="center">Center</option>
+                        <option value="top">Top</option>
+                        <option value="bottom">Bottom</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="upload-zone" id="promo-upload-zone">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">Click or drag & drop promotional image here</div>
+                <div class="upload-subtext">Supported: PNG, JPG, JPEG, WEBP</div>
+                <input type="file" id="promo-input" accept="image/*" class="hidden">
+            </div>
+
+            <div id="promo-preview" class="preview-grid" style="display: none;"></div>
+
+            <div id="promo-download-all" class="download-all" style="display: none;">
+                <button class="download-all-btn" onclick="downloadAllPromo()">⬇️ Download All Promotional (ZIP)</button>
+            </div>
+        </div>
+
+        <!-- Screenshots Tab -->
+        <div id="screenshots-tab" class="tab-content">
+            <div class="alert alert-info">
+                <span>ℹ️</span>
+                <div>Upload up to 5 screenshots. Tool will automatically resize to 1280x800px or 640x400px.</div>
+            </div>
+
+            <div class="options-panel">
+                <div class="option-group">
+                    <label class="option-label">Screenshot Size</label>
+                    <select id="screenshot-size">
+                        <option value="1280x800">1280 x 800px (Large)</option>
+                        <option value="640x400">640 x 400px (Small)</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label class="option-label">Resize Mode</label>
+                    <select id="screenshot-mode">
+                        <option value="contain">Contain (maintain ratio + padding)</option>
+                        <option value="cover">Cover (crop to fit)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="upload-zone" id="screenshot-upload-zone">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">Click or drag & drop screenshots here</div>
+                <div class="upload-subtext">Max 5 images | Supported: PNG, JPG, JPEG, WEBP</div>
+                <input type="file" id="screenshot-input" accept="image/*" multiple class="hidden">
+            </div>
+
+            <div id="screenshot-preview" class="preview-grid" style="display: none;"></div>
+
+            <div id="screenshot-download-all" class="download-all" style="display: none;">
+                <button class="download-all-btn" onclick="downloadAllScreenshots()">⬇️ Download All Screenshots (ZIP)</button>
+            </div>
+        </div>
+
+        <!-- Mockup Generator Tab (NEW) -->
+        <div id="mockup-tab" class="tab-content">
+            <div class="alert alert-info">
+                <span>ℹ️</span>
+                <div>Create professional mockups with custom backgrounds. Upload your screenshot and customize the background. Layout is locked for consistency.</div>
+            </div>
+
+            <div class="workspace">
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <!-- Background Section -->
+                    <div class="sidebar-section">
+                        <h3>🎨 Background</h3>
+                        <div class="bg-type-selector">
+                            <button class="bg-type-btn active" data-type="solid">Solid</button>
+                            <button class="bg-type-btn" data-type="gradient">Gradient</button>
+                            <button class="bg-type-btn" data-type="image">Image</button>
+                        </div>
+
+                        <!-- Solid Color Option -->
+                        <div class="bg-option active" id="bg-solid">
+                            <div class="option-group">
+                                <label class="option-label">Color</label>
+                                <input type="color" id="bg-solid-color" value="#023047">
+                            </div>
+                        </div>
+
+                        <!-- Gradient Option -->
+                        <div class="bg-option" id="bg-gradient">
+                            <div class="gradient-presets">
+                                <div class="gradient-preset dark-saas" data-gradient="linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)"></div>
+                                <div class="gradient-preset neon" data-gradient="linear-gradient(135deg, #ff006e, #8338ec, #3a86ff)"></div>
+                                <div class="gradient-preset pastel" data-gradient="linear-gradient(135deg, #ffd6ff, #e7c6ff, #c8b6ff)"></div>
+                                <div class="gradient-preset ocean" data-gradient="linear-gradient(135deg, #00b4d8, #0077b6, #03045e)"></div>
+                                <div class="gradient-preset sunset" data-gradient="linear-gradient(135deg, #ff9e00, #ff6b00, #ff0054)"></div>
+                                <div class="gradient-preset forest" data-gradient="linear-gradient(135deg, #52b788, #2d6a4f, #1b4332)"></div>
+                            </div>
+                            <div class="option-group" style="margin-top: 1rem;">
+                                <label class="option-label">Custom Gradient</label>
+                                <div class="color-picker-group">
+                                    <div class="color-input-wrapper">
+                                        <label>Color 1</label>
+                                        <input type="color" id="gradient-color1" value="#023047">
+                                    </div>
+                                    <div class="color-input-wrapper">
+                                        <label>Color 2</label>
+                                        <input type="color" id="gradient-color2" value="#219EBC">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image Option -->
+                        <div class="bg-option" id="bg-image">
+                            <div class="option-group">
+                                <label class="option-label">Upload Background</label>
+                                <input type="file" id="bg-image-input" accept="image/*" style="padding: 0.5rem;">
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Fit Mode</label>
+                                <select id="bg-image-mode">
+                                    <option value="cover">Cover</option>
+                                    <option value="contain">Contain</option>
+                                </select>
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Blur Amount</label>
+                                <input type="range" id="bg-blur" min="0" max="20" value="0">
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Dim Overlay (%)</label>
+                                <input type="range" id="bg-dim" min="0" max="80" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Screenshot Upload -->
+                    <div class="sidebar-section">
+                        <h3>📱 Screenshot</h3>
+                        <input type="file" id="mockup-screenshot-input" accept="image/*" style="width: 100%; padding: 0.8rem; background: rgba(46, 41, 78, 0.6); border: 2px solid var(--border); border-radius: 8px; color: var(--lighter); font-family: 'JetBrains Mono', monospace;">
+                        <div class="option-group" style="margin-top: 1rem;">
+                            <label class="option-label">Screenshot Position</label>
+                            <select id="screenshot-position">
+                                <option value="center">Center</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tagline Section -->
+                    <div class="sidebar-section">
+                        <h3>✍️ Tagline</h3>
+                        <div class="option-group">
+                            <label class="option-label">Enable Tagline</label>
+                            <input type="checkbox" id="tagline-enabled" style="width: auto; height: 20px;">
+                        </div>
+                        <div id="tagline-options" style="display: none;">
+                            <div class="option-group">
+                                <label class="option-label">Tagline Text</label>
+                                <textarea id="tagline-text" placeholder="Enter your tagline..." style="width: 100%; padding: 0.8rem; background: rgba(46, 41, 78, 0.6); border: 2px solid var(--border); border-radius: 8px; color: var(--lighter); font-family: 'JetBrains Mono', monospace; resize: vertical; min-height: 80px;"></textarea>
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Tagline Position</label>
+                                <select id="tagline-position">
+                                    <option value="top">Top</option>
+                                    <option value="bottom">Bottom</option>
+                                </select>
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Font Size</label>
+                                <input type="range" id="tagline-font-size" min="20" max="80" value="40">
+                                <span id="tagline-font-size-value" style="color: var(--light); font-size: 0.85rem;">40px</span>
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Text Color</label>
+                                <input type="color" id="tagline-color" value="#ffffff">
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Text Align</label>
+                                <select id="tagline-align">
+                                    <option value="center">Center</option>
+                                    <option value="left">Left</option>
+                                    <option value="right">Right</option>
+                                </select>
+                            </div>
+                            <div class="option-group">
+                                <label class="option-label">Font Weight</label>
+                                <select id="tagline-weight">
+                                    <option value="400">Regular</option>
+                                    <option value="600">Semi-Bold</option>
+                                    <option value="700" selected>Bold</option>
+                                    <option value="800">Extra Bold</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Export Section -->
+                    <div class="sidebar-section export-section">
+                        <h3>💾 Export</h3>
+                        <div class="export-presets">
+                            <label class="export-preset">
+                                <input type="checkbox" checked data-size="440x280" data-name="Chrome Web Store Thumbnail">
+                                <div class="export-preset-info">
+                                    <div class="export-preset-name">CWS Thumbnail</div>
+                                    <div class="export-preset-size">440 × 280px</div>
+                                </div>
+                            </label>
+                            <label class="export-preset">
+                                <input type="checkbox" checked data-size="1280x800" data-name="Chrome Web Store Screenshot">
+                                <div class="export-preset-info">
+                                    <div class="export-preset-name">CWS Screenshot</div>
+                                    <div class="export-preset-size">1280 × 800px</div>
+                                </div>
+                            </label>
+                            <label class="export-preset">
+                                <input type="checkbox" data-size="1400x560" data-name="Featured Promo">
+                                <div class="export-preset-info">
+                                    <div class="export-preset-name">Featured Promo</div>
+                                    <div class="export-preset-size">1400 × 560px</div>
+                                </div>
+                            </label>
+                            <label class="export-preset">
+                                <input type="checkbox" data-size="1080x1080" data-name="Social Media">
+                                <div class="export-preset-info">
+                                    <div class="export-preset-name">Social Media</div>
+                                    <div class="export-preset-size">1080 × 1080px</div>
+                                </div>
+                            </label>
+                        </div>
+                        <button class="export-btn" id="export-selected" disabled>Export Selected</button>
+                        <button class="export-all-btn" id="export-all" disabled>⬇️ Export All (ZIP)</button>
+                    </div>
+                </div>
+
+                <!-- Canvas Area -->
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="1280" height="800"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guide Tab -->
+        <div id="guide-tab" class="tab-content">
+            <div class="guide-content">
+                <div class="guide-section">
+                    <h2>📋 Preparation Checklist</h2>
+                    <div class="checklist">
+                        <div class="checklist-item">Complete manifest.json with all required information</div>
+                        <div class="checklist-item">Icons in all required sizes (16, 32, 48, 128px)</div>
+                        <div class="checklist-item">Small tile image (440x280px)</div>
+                        <div class="checklist-item">At least 1 screenshot (1280x800 or 640x400px)</div>
+                        <div class="checklist-item">Promotional tile (Marquee) if you want to be featured</div>
+                    </div>
+                </div>
+
+                <div class="guide-section">
+                    <h2>🚀 Chrome Extension Upload Process</h2>
+                    
+                    <h3>Step 1: Prepare Files</h3>
+                    <ul>
+                        <li>Zip your entire source code into a .zip file</li>
+                        <li>Ensure manifest.json is in the root folder</li>
+                        <li>.zip file should not exceed 20MB</li>
+                        <li>Remove unnecessary files (node_modules, .git, etc.)</li>
+                    </ul>
+
+                    <h3>Step 2: Access Chrome Developer Dashboard</h3>
+                    <ul>
+                        <li>Link: <a href="https://chrome.google.com/webstore/devconsole" target="_blank">https://chrome.google.com/webstore/devconsole</a></li>
+                        <li>Sign in with your Google account</li>
+                        <li>Pay one-time $5 fee (if first time)</li>
+                    </ul>
+
+                    <h3>Step 3: Upload Extension</h3>
+                    <ul>
+                        <li>Click "New Item"</li>
+                        <li>Upload .zip file</li>
+                        <li>Wait for system validation (checks manifest errors, permissions, etc.)</li>
+                    </ul>
+
+                    <h3>Step 4: Complete Store Listing Information</h3>
+                    <ul>
+                        <li><strong>Detailed description:</strong> 132-10,000 characters (recommended 500-1000 characters)</li>
+                        <li><strong>Short description:</strong> 132 characters max (displayed in search)</li>
+                        <li><strong>Category:</strong> Choose the most appropriate category</li>
+                        <li><strong>Language:</strong> Primary language of your extension</li>
+                        <li><strong>Icons & Images:</strong> Upload all prepared assets</li>
+                    </ul>
+
+                    <h3>Step 5: Privacy & Distribution</h3>
+                    <ul>
+                        <li><strong>Visibility:</strong> Public / Unlisted / Private</li>
+                        <li><strong>Privacy Policy:</strong> URL required if collecting user data</li>
+                        <li><strong>Regions:</strong> Select countries/regions for distribution</li>
+                    </ul>
+
+                    <h3>Step 6: Submit for Review</h3>
+                    <ul>
+                        <li>Review all information</li>
+                        <li>Click "Submit for Review"</li>
+                        <li>Review time: few hours to several days (typically 1-3 days)</li>
+                        <li>You'll receive email notification when approved or rejected</li>
+                    </ul>
+                </div>
+
+                <div class="guide-section">
+                    <h2>💡 Best Practices</h2>
+                    <div class="alert alert-warning">
+                        <span>⚠️</span>
+                        <div>
+                            <ul style="margin-left: 1rem;">
+                                <li>Screenshots should have clear annotations about features</li>
+                                <li>Description should include keywords for better SEO</li>
+                                <li>Icon must be clear and recognizable at all sizes</li>
+                                <li>Promotional images must be professional, without overly small text</li>
+                                <li>Privacy policy must be clear about data handling</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-section">
+                    <h2>📐 Specifications Reference</h2>
+                    <table class="specs-table">
+                        <thead>
+                            <tr>
+                                <th>Image Type</th>
+                                <th>Size</th>
+                                <th>Required</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Icon</td>
+                                <td>16x16px</td>
+                                <td>No</td>
+                                <td>Displayed on toolbar</td>
+                            </tr>
+                            <tr>
+                                <td>Icon</td>
+                                <td>32x32px</td>
+                                <td>No</td>
+                                <td>Windows computers</td>
+                            </tr>
+                            <tr>
+                                <td>Icon</td>
+                                <td>48x48px</td>
+                                <td>No</td>
+                                <td>Extensions management page</td>
+                            </tr>
+                            <tr>
+                                <td>Icon</td>
+                                <td>128x128px</td>
+                                <td><strong>Yes</strong></td>
+                                <td>Store & Installation</td>
+                            </tr>
+                            <tr>
+                                <td>Small Tile</td>
+                                <td>440x280px</td>
+                                <td><strong>Yes</strong></td>
+                                <td>Search results</td>
+                            </tr>
+                            <tr>
+                                <td>Marquee</td>
+                                <td>1400x560px</td>
+                                <td>No</td>
+                                <td>Featured banner (if selected)</td>
+                            </tr>
+                            <tr>
+                                <td>Screenshot</td>
+                                <td>1280x800 or 640x400px</td>
+                                <td><strong>Yes (min 1)</strong></td>
+                                <td>Maximum 5 images</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="guide-section">
+                    <h2>🔍 Common Rejection Reasons</h2>
+                    <ul>
+                        <li><strong>Unreasonable permissions:</strong> Requesting unnecessary permissions</li>
+                        <li><strong>Unclear description:</strong> Not explaining functionality sufficiently</li>
+                        <li><strong>Missing privacy policy:</strong> Collecting data without policy</li>
+                        <li><strong>Spam/misleading:</strong> Deceptive description or keyword spam</li>
+                        <li><strong>Copyright:</strong> Using unauthorized logos/brand names</li>
+                        <li><strong>Malware/phishing:</strong> Malicious code or scam</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Made with 💜 for Chrome Extension Developers</p>
+            <p style="margin-top: 0.5rem; font-size: 0.8rem;">All processing happens client-side, no server uploads</p>
+            <p style="margin-top: 1rem;">
+                <a href="https://ko-fi.com/icecraftdigital" target="_blank" style="color: var(--secondary); text-decoration: none; font-weight: 600; transition: color 0.3s ease;">
+                    ☕ Buy me A Coffee
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.dataset.tab + '-tab';
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Global storage for processed images
+        let processedIcons = [];
+        let processedPromo = [];
+        let processedScreenshots = [];
+
+        // ==================== ICONS TAB ====================
+        const iconSizes = [
+            { name: 'Icon 16x16', width: 16, height: 16 },
+            { name: 'Icon 32x32', width: 32, height: 32 },
+            { name: 'Icon 48x48', width: 48, height: 48 },
+            { name: 'Icon 128x128', width: 128, height: 128 }
+        ];
+
+        setupUploadZone('icon-upload-zone', 'icon-input', handleIconUpload);
+
+        function handleIconUpload(file) {
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                img.onload = () => {
+                    processedIcons = [];
+                    const mode = document.getElementById('icon-resize-mode').value;
+                    const bgColor = document.getElementById('icon-bg-color').value;
+                    const padding = parseInt(document.getElementById('icon-padding').value);
+
+                    iconSizes.forEach(size => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = size.width;
+                        canvas.height = size.height;
+                        const ctx = canvas.getContext('2d');
+
+                        // Fill background
+                        ctx.fillStyle = bgColor;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        const paddingPx = (size.width * padding) / 100;
+                        const targetWidth = size.width - paddingPx * 2;
+                        const targetHeight = size.height - paddingPx * 2;
+
+                        let sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight;
+
+                        if (mode === 'contain') {
+                            const scale = Math.min(targetWidth / img.width, targetHeight / img.height);
+                            dWidth = img.width * scale;
+                            dHeight = img.height * scale;
+                            dx = paddingPx + (targetWidth - dWidth) / 2;
+                            dy = paddingPx + (targetHeight - dHeight) / 2;
+                            ctx.drawImage(img, dx, dy, dWidth, dHeight);
+                        } else if (mode === 'cover') {
+                            const scale = Math.max(targetWidth / img.width, targetHeight / img.height);
+                            dWidth = img.width * scale;
+                            dHeight = img.height * scale;
+                            dx = paddingPx + (targetWidth - dWidth) / 2;
+                            dy = paddingPx + (targetHeight - dHeight) / 2;
+                            ctx.drawImage(img, dx, dy, dWidth, dHeight);
+                        } else {
+                            ctx.drawImage(img, paddingPx, paddingPx, targetWidth, targetHeight);
+                        }
+
+                        const dataUrl = canvas.toDataURL('image/png');
+                        processedIcons.push({
+                            name: size.name,
+                            size: `${size.width}x${size.height}`,
+                            dataUrl: dataUrl,
+                            filename: `icon-${size.width}x${size.height}.png`
+                        });
+                    });
+
+                    displayPreviews('icon-preview', processedIcons);
+                    document.getElementById('icon-download-all').style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== PROMOTIONAL TAB ====================
+        const promoSizes = [
+            { name: 'Small Tile', width: 440, height: 280 },
+            { name: 'Marquee', width: 1400, height: 560 },
+            { name: 'Screenshot', width: 1280, height: 800 }
+        ];
+
+        setupUploadZone('promo-upload-zone', 'promo-input', handlePromoUpload);
+
+        function handlePromoUpload(file) {
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                img.onload = () => {
+                    processedPromo = [];
+                    const cropPosition = document.getElementById('promo-crop-position').value;
+
+                    promoSizes.forEach(size => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = size.width;
+                        canvas.height = size.height;
+                        const ctx = canvas.getContext('2d');
+
+                        const scale = Math.max(size.width / img.width, size.height / img.height);
+                        const scaledWidth = img.width * scale;
+                        const scaledHeight = img.height * scale;
+
+                        let dx = (size.width - scaledWidth) / 2;
+                        let dy;
+
+                        if (cropPosition === 'top') {
+                            dy = 0;
+                        } else if (cropPosition === 'bottom') {
+                            dy = size.height - scaledHeight;
+                        } else {
+                            dy = (size.height - scaledHeight) / 2;
+                        }
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, dx, dy, scaledWidth, scaledHeight);
+
+                        const dataUrl = canvas.toDataURL('image/png');
+                        processedPromo.push({
+                            name: size.name,
+                            size: `${size.width}x${size.height}`,
+                            dataUrl: dataUrl,
+                            filename: `${size.name.toLowerCase().replace(' ', '-')}-${size.width}x${size.height}.png`
+                        });
+                    });
+
+                    displayPreviews('promo-preview', processedPromo);
+                    document.getElementById('promo-download-all').style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== SCREENSHOTS TAB ====================
+        setupUploadZone('screenshot-upload-zone', 'screenshot-input', handleScreenshotUpload, true);
+
+        function handleScreenshotUpload(files) {
+            if (files.length > 5) {
+                alert('Maximum 5 screenshots!');
+                return;
+            }
+
+            processedScreenshots = [];
+            const sizeOption = document.getElementById('screenshot-size').value;
+            const [width, height] = sizeOption.split('x').map(Number);
+            const mode = document.getElementById('screenshot-mode').value;
+
+            let processed = 0;
+
+            Array.from(files).forEach((file, index) => {
+                const img = new Image();
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        if (mode === 'contain') {
+                            const scale = Math.min(width / img.width, height / img.height);
+                            const dWidth = img.width * scale;
+                            const dHeight = img.height * scale;
+                            const dx = (width - dWidth) / 2;
+                            const dy = (height - dHeight) / 2;
+                            ctx.drawImage(img, dx, dy, dWidth, dHeight);
+                        } else {
+                            const scale = Math.max(width / img.width, height / img.height);
+                            const dWidth = img.width * scale;
+                            const dHeight = img.height * scale;
+                            const dx = (width - dWidth) / 2;
+                            const dy = (height - dHeight) / 2;
+                            ctx.drawImage(img, dx, dy, dWidth, dHeight);
+                        }
+
+                        const dataUrl = canvas.toDataURL('image/png');
+                        processedScreenshots.push({
+                            name: `Screenshot ${index + 1}`,
+                            size: `${width}x${height}`,
+                            dataUrl: dataUrl,
+                            filename: `screenshot-${index + 1}-${width}x${height}.png`
+                        });
+
+                        processed++;
+                        if (processed === files.length) {
+                            displayPreviews('screenshot-preview', processedScreenshots);
+                            document.getElementById('screenshot-download-all').style.display = 'block';
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ==================== MOCKUP GENERATOR ====================
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let mockupState = {
+            bgType: 'solid',
+            bgSolidColor: '#2E294E',
+            bgGradient: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+            bgImage: null,
+            bgImageMode: 'cover',
+            bgBlur: 0,
+            bgDim: 0,
+            screenshot: null,
+            screenshotPosition: 'center',
+            taglineEnabled: false,
+            taglineText: '',
+            taglinePosition: 'top',
+            taglineFontSize: 40,
+            taglineColor: '#ffffff',
+            taglineAlign: 'center',
+            taglineWeight: '700'
+        };
+
+        // Background type switching
+        document.querySelectorAll('.bg-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.bg-type-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
+                
+                btn.classList.add('active');
+                const type = btn.dataset.type;
+                mockupState.bgType = type;
+                document.getElementById(`bg-${type}`).classList.add('active');
+                
+                renderMockup();
+            });
+        });
+
+        // Solid color
+        document.getElementById('bg-solid-color').addEventListener('input', (e) => {
+            mockupState.bgSolidColor = e.target.value;
+            renderMockup();
+        });
+
+        // Gradient presets
+        document.querySelectorAll('.gradient-preset').forEach(preset => {
+            preset.addEventListener('click', () => {
+                document.querySelectorAll('.gradient-preset').forEach(p => p.classList.remove('active'));
+                preset.classList.add('active');
+                mockupState.bgGradient = preset.dataset.gradient;
+                renderMockup();
+            });
+        });
+
+        // Custom gradient
+        document.getElementById('gradient-color1').addEventListener('input', updateCustomGradient);
+        document.getElementById('gradient-color2').addEventListener('input', updateCustomGradient);
+
+        function updateCustomGradient() {
+            const color1 = document.getElementById('gradient-color1').value;
+            const color2 = document.getElementById('gradient-color2').value;
+            mockupState.bgGradient = `linear-gradient(135deg, ${color1}, ${color2})`;
+            document.querySelectorAll('.gradient-preset').forEach(p => p.classList.remove('active'));
+            renderMockup();
+        }
+
+        // Background image
+        document.getElementById('bg-image-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        mockupState.bgImage = img;
+                        renderMockup();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('bg-image-mode').addEventListener('change', (e) => {
+            mockupState.bgImageMode = e.target.value;
+            renderMockup();
+        });
+
+        document.getElementById('bg-blur').addEventListener('input', (e) => {
+            mockupState.bgBlur = parseInt(e.target.value);
+            renderMockup();
+        });
+
+        document.getElementById('bg-dim').addEventListener('input', (e) => {
+            mockupState.bgDim = parseInt(e.target.value);
+            renderMockup();
+        });
+
+        // Screenshot upload
+        document.getElementById('mockup-screenshot-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        mockupState.screenshot = img;
+                        renderMockup();
+                        document.getElementById('export-selected').disabled = false;
+                        document.getElementById('export-all').disabled = false;
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Screenshot position
+        document.getElementById('screenshot-position').addEventListener('change', (e) => {
+            mockupState.screenshotPosition = e.target.value;
+            renderMockup();
+        });
+
+        // Tagline controls
+        document.getElementById('tagline-enabled').addEventListener('change', (e) => {
+            mockupState.taglineEnabled = e.target.checked;
+            document.getElementById('tagline-options').style.display = e.target.checked ? 'block' : 'none';
+            renderMockup();
+        });
+
+        document.getElementById('tagline-text').addEventListener('input', (e) => {
+            mockupState.taglineText = e.target.value;
+            renderMockup();
+        });
+
+        document.getElementById('tagline-position').addEventListener('change', (e) => {
+            mockupState.taglinePosition = e.target.value;
+            renderMockup();
+        });
+
+        document.getElementById('tagline-font-size').addEventListener('input', (e) => {
+            mockupState.taglineFontSize = parseInt(e.target.value);
+            document.getElementById('tagline-font-size-value').textContent = `${e.target.value}px`;
+            renderMockup();
+        });
+
+        document.getElementById('tagline-color').addEventListener('input', (e) => {
+            mockupState.taglineColor = e.target.value;
+            renderMockup();
+        });
+
+        document.getElementById('tagline-align').addEventListener('change', (e) => {
+            mockupState.taglineAlign = e.target.value;
+            renderMockup();
+        });
+
+        document.getElementById('tagline-weight').addEventListener('change', (e) => {
+            mockupState.taglineWeight = e.target.value;
+            renderMockup();
+        });
+
+        function renderMockup() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Render background
+            if (mockupState.bgType === 'solid') {
+                ctx.fillStyle = mockupState.bgSolidColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else if (mockupState.bgType === 'gradient') {
+                const gradientMatch = mockupState.bgGradient.match(/linear-gradient\(135deg,\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\)|rgba\([^)]+\))[^,]*,\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\)|rgba\([^)]+\))/);
+                if (gradientMatch) {
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, gradientMatch[1].trim());
+                    gradient.addColorStop(1, gradientMatch[2].trim());
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            } else if (mockupState.bgType === 'image' && mockupState.bgImage) {
+                if (mockupState.bgBlur > 0) {
+                    ctx.filter = `blur(${mockupState.bgBlur}px)`;
+                }
+
+                if (mockupState.bgImageMode === 'cover') {
+                    const scale = Math.max(canvas.width / mockupState.bgImage.width, canvas.height / mockupState.bgImage.height);
+                    const x = (canvas.width - mockupState.bgImage.width * scale) / 2;
+                    const y = (canvas.height - mockupState.bgImage.height * scale) / 2;
+                    ctx.drawImage(mockupState.bgImage, x, y, mockupState.bgImage.width * scale, mockupState.bgImage.height * scale);
+                } else {
+                    const scale = Math.min(canvas.width / mockupState.bgImage.width, canvas.height / mockupState.bgImage.height);
+                    const x = (canvas.width - mockupState.bgImage.width * scale) / 2;
+                    const y = (canvas.height - mockupState.bgImage.height * scale) / 2;
+                    ctx.drawImage(mockupState.bgImage, x, y, mockupState.bgImage.width * scale, mockupState.bgImage.height * scale);
+                }
+
+                ctx.filter = 'none';
+
+                if (mockupState.bgDim > 0) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${mockupState.bgDim / 100})`;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            // Calculate tagline space
+            const taglineHeight = mockupState.taglineEnabled && mockupState.taglineText ? mockupState.taglineFontSize * 2 : 0;
+
+            // Render screenshot with positioning
+            if (mockupState.screenshot) {
+                const availableHeight = canvas.height - taglineHeight;
+                const maxWidth = canvas.width * 0.7;
+                const maxHeight = availableHeight * 0.7;
+                const scale = Math.min(maxWidth / mockupState.screenshot.width, maxHeight / mockupState.screenshot.height);
+                const width = mockupState.screenshot.width * scale;
+                const height = mockupState.screenshot.height * scale;
+                
+                let x, y;
+                
+                // Horizontal positioning
+                if (mockupState.screenshotPosition === 'left') {
+                    x = canvas.width * 0.1;
+                } else if (mockupState.screenshotPosition === 'right') {
+                    x = canvas.width - width - (canvas.width * 0.1);
+                } else {
+                    x = (canvas.width - width) / 2;
+                }
+                
+                // Vertical positioning (consider tagline)
+                if (mockupState.taglineEnabled && mockupState.taglinePosition === 'top') {
+                    y = taglineHeight + (availableHeight - height) / 2;
+                } else if (mockupState.taglineEnabled && mockupState.taglinePosition === 'bottom') {
+                    y = (availableHeight - height) / 2;
+                } else {
+                    y = (canvas.height - height) / 2;
+                }
+
+                // Add shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 10;
+
+                ctx.drawImage(mockupState.screenshot, x, y, width, height);
+                
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+
+            // Render tagline
+            if (mockupState.taglineEnabled && mockupState.taglineText) {
+                ctx.font = `${mockupState.taglineWeight} ${mockupState.taglineFontSize}px 'Space Mono', monospace`;
+                ctx.fillStyle = mockupState.taglineColor;
+                ctx.textAlign = mockupState.taglineAlign;
+                
+                let textX;
+                if (mockupState.taglineAlign === 'left') {
+                    textX = canvas.width * 0.1;
+                } else if (mockupState.taglineAlign === 'right') {
+                    textX = canvas.width * 0.9;
+                } else {
+                    textX = canvas.width / 2;
+                }
+
+                let textY;
+                if (mockupState.taglinePosition === 'top') {
+                    textY = mockupState.taglineFontSize + 40;
+                } else {
+                    textY = canvas.height - 60;
+                }
+
+                // Add text shadow for better readability
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+
+                ctx.fillText(mockupState.taglineText, textX, textY);
+                
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+        }
+
+        // Export functionality
+        document.getElementById('export-selected').addEventListener('click', () => {
+            const selectedPresets = Array.from(document.querySelectorAll('.export-preset input[type="checkbox"]:checked'));
+            selectedPresets.forEach(preset => {
+                const [width, height] = preset.dataset.size.split('x').map(Number);
+                const name = preset.dataset.name;
+                exportMockup(width, height, name);
+            });
+        });
+
+        document.getElementById('export-all').addEventListener('click', async () => {
+            const presets = [
+                { width: 440, height: 280, name: 'Chrome Web Store Thumbnail' },
+                { width: 1280, height: 800, name: 'Chrome Web Store Screenshot' },
+                { width: 1400, height: 560, name: 'Featured Promo' },
+                { width: 1080, height: 1080, name: 'Social Media' }
+            ];
+
+            const zip = new JSZip();
+
+            for (const preset of presets) {
+                const dataUrl = generateMockup(preset.width, preset.height);
+                const base64Data = dataUrl.split(',')[1];
+                const filename = `${preset.name.toLowerCase().replace(/\s+/g, '-')}-${preset.width}x${preset.height}.png`;
+                zip.file(filename, base64Data, { base64: true });
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mockup-exports.zip';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        function exportMockup(width, height, name) {
+            const dataUrl = generateMockup(width, height);
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `${name.toLowerCase().replace(/\s+/g, '-')}-${width}x${height}.png`;
+            a.click();
+        }
+
+        function generateMockup(width, height) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // Render background
+            if (mockupState.bgType === 'solid') {
+                tempCtx.fillStyle = mockupState.bgSolidColor;
+                tempCtx.fillRect(0, 0, width, height);
+            } else if (mockupState.bgType === 'gradient') {
+                const gradientMatch = mockupState.bgGradient.match(/linear-gradient\(135deg,\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\)|rgba\([^)]+\))[^,]*,\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\)|rgba\([^)]+\))/);
+                if (gradientMatch) {
+                    const gradient = tempCtx.createLinearGradient(0, 0, width, height);
+                    gradient.addColorStop(0, gradientMatch[1].trim());
+                    gradient.addColorStop(1, gradientMatch[2].trim());
+                    tempCtx.fillStyle = gradient;
+                    tempCtx.fillRect(0, 0, width, height);
+                }
+            } else if (mockupState.bgType === 'image' && mockupState.bgImage) {
+                if (mockupState.bgBlur > 0) {
+                    tempCtx.filter = `blur(${mockupState.bgBlur}px)`;
+                }
+
+                if (mockupState.bgImageMode === 'cover') {
+                    const scale = Math.max(width / mockupState.bgImage.width, height / mockupState.bgImage.height);
+                    const x = (width - mockupState.bgImage.width * scale) / 2;
+                    const y = (height - mockupState.bgImage.height * scale) / 2;
+                    tempCtx.drawImage(mockupState.bgImage, x, y, mockupState.bgImage.width * scale, mockupState.bgImage.height * scale);
+                } else {
+                    const scale = Math.min(width / mockupState.bgImage.width, height / mockupState.bgImage.height);
+                    const x = (width - mockupState.bgImage.width * scale) / 2;
+                    const y = (height - mockupState.bgImage.height * scale) / 2;
+                    tempCtx.drawImage(mockupState.bgImage, x, y, mockupState.bgImage.width * scale, mockupState.bgImage.height * scale);
+                }
+
+                tempCtx.filter = 'none';
+
+                if (mockupState.bgDim > 0) {
+                    tempCtx.fillStyle = `rgba(0, 0, 0, ${mockupState.bgDim / 100})`;
+                    tempCtx.fillRect(0, 0, width, height);
+                }
+            }
+
+            // Calculate tagline space
+            const scaleFactor = width / canvas.width;
+            const taglineFontSize = mockupState.taglineFontSize * scaleFactor;
+            const taglineHeight = mockupState.taglineEnabled && mockupState.taglineText ? taglineFontSize * 2 : 0;
+
+            // Render screenshot
+            if (mockupState.screenshot) {
+                const availableHeight = height - taglineHeight;
+                const maxWidth = width * 0.7;
+                const maxHeight = availableHeight * 0.7;
+                const scale = Math.min(maxWidth / mockupState.screenshot.width, maxHeight / mockupState.screenshot.height);
+                const imgWidth = mockupState.screenshot.width * scale;
+                const imgHeight = mockupState.screenshot.height * scale;
+                
+                let x, y;
+                
+                // Horizontal positioning
+                if (mockupState.screenshotPosition === 'left') {
+                    x = width * 0.1;
+                } else if (mockupState.screenshotPosition === 'right') {
+                    x = width - imgWidth - (width * 0.1);
+                } else {
+                    x = (width - imgWidth) / 2;
+                }
+                
+                // Vertical positioning
+                if (mockupState.taglineEnabled && mockupState.taglinePosition === 'top') {
+                    y = taglineHeight + (availableHeight - imgHeight) / 2;
+                } else if (mockupState.taglineEnabled && mockupState.taglinePosition === 'bottom') {
+                    y = (availableHeight - imgHeight) / 2;
+                } else {
+                    y = (height - imgHeight) / 2;
+                }
+
+                tempCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                tempCtx.shadowBlur = 20 * scaleFactor;
+                tempCtx.shadowOffsetX = 0;
+                tempCtx.shadowOffsetY = 10 * scaleFactor;
+
+                tempCtx.drawImage(mockupState.screenshot, x, y, imgWidth, imgHeight);
+                
+                tempCtx.shadowColor = 'transparent';
+                tempCtx.shadowBlur = 0;
+                tempCtx.shadowOffsetX = 0;
+                tempCtx.shadowOffsetY = 0;
+            }
+
+            // Render tagline
+            if (mockupState.taglineEnabled && mockupState.taglineText) {
+                tempCtx.font = `${mockupState.taglineWeight} ${taglineFontSize}px 'Space Mono', monospace`;
+                tempCtx.fillStyle = mockupState.taglineColor;
+                tempCtx.textAlign = mockupState.taglineAlign;
+                
+                let textX;
+                if (mockupState.taglineAlign === 'left') {
+                    textX = width * 0.1;
+                } else if (mockupState.taglineAlign === 'right') {
+                    textX = width * 0.9;
+                } else {
+                    textX = width / 2;
+                }
+
+                let textY;
+                if (mockupState.taglinePosition === 'top') {
+                    textY = taglineFontSize + (40 * scaleFactor);
+                } else {
+                    textY = height - (60 * scaleFactor);
+                }
+
+                tempCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                tempCtx.shadowBlur = 10 * scaleFactor;
+                tempCtx.shadowOffsetX = 2 * scaleFactor;
+                tempCtx.shadowOffsetY = 2 * scaleFactor;
+
+                tempCtx.fillText(mockupState.taglineText, textX, textY);
+                
+                tempCtx.shadowColor = 'transparent';
+                tempCtx.shadowBlur = 0;
+                tempCtx.shadowOffsetX = 0;
+                tempCtx.shadowOffsetY = 0;
+            }
+
+            return tempCanvas.toDataURL('image/png');
+        }
+
+        // Initial render
+        renderMockup();
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function setupUploadZone(zoneId, inputId, handler, multiple = false) {
+            const zone = document.getElementById(zoneId);
+            const input = document.getElementById(inputId);
+
+            zone.addEventListener('click', () => input.click());
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const files = multiple ? e.dataTransfer.files : e.dataTransfer.files[0];
+                if (files) handler(files);
+            });
+
+            input.addEventListener('change', (e) => {
+                const files = multiple ? e.target.files : e.target.files[0];
+                if (files) handler(files);
+            });
+        }
+
+        function displayPreviews(containerId, images) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            container.style.display = 'grid';
+
+            images.forEach((img, index) => {
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+                
+                card.innerHTML = `
+                    <div class="preview-header">
+                        <div class="preview-title">${img.name}</div>
+                        <div class="preview-size">${img.size}</div>
+                    </div>
+                    <div class="preview-image-container">
+                        <img src="${img.dataUrl}" alt="${img.name}" class="preview-image">
+                    </div>
+                    <button class="download-btn" onclick="downloadImage('${img.dataUrl}', '${img.filename}')">
+                        Download ${img.name}
+                    </button>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function downloadImage(dataUrl, filename) {
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = filename;
+            a.click();
+        }
+
+        async function downloadAllIcons() {
+            await downloadZip(processedIcons, 'chrome-extension-icons.zip');
+        }
+
+        async function downloadAllPromo() {
+            await downloadZip(processedPromo, 'chrome-extension-promotional.zip');
+        }
+
+        async function downloadAllScreenshots() {
+            await downloadZip(processedScreenshots, 'chrome-extension-screenshots.zip');
+        }
+
+        async function downloadZip(images, zipFilename) {
+            const zip = new JSZip();
+
+            images.forEach(img => {
+                const base64Data = img.dataUrl.split(',')[1];
+                zip.file(img.filename, base64Data, { base64: true });
+            });
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = zipFilename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+    <a href="https://ko-fi.com/icecraftdigital"
+       target="_blank"
+       class="donate-fab"
+       title="Support this tool on Ko-fi">
+       ☕ Buy me A Coffee
+    </a>
+</body>
+</html>
