@@ -1,3 +1,5 @@
+https://terrydigital.github.io/Chrome-Extension-Image-Resizer/
+
 # "Mockup Generator"  with:
 
 . New Color Scheme 🎨
